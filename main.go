@@ -36,7 +36,7 @@ func parseCRD(crd *v1beta1.CustomResourceDefinition) {
 		buf.Write([]byte(fmt.Sprintf("apiVersion: %s/%s\n", group, version.Name)))
 		buf.Write([]byte(fmt.Sprintf("kind: %s\n", name)))
 		buf.Write([]byte(fmt.Sprintf("metadata:\n  name: name\n  namespace: namespace\n")))
-		buf.Write([]byte(fmt.Sprintf("spec: \n")))
+		buf.Write([]byte(fmt.Sprintf("spec:\n")))
 		properties := version.Schema.OpenAPIV3Schema.Properties["spec"]
 		parseProperties(&properties, buf)
 		buf.Write([]byte(fmt.Sprintf("---")))
