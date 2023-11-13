@@ -90,10 +90,10 @@ func formatSchema(indent string, key string, valueType string, description strin
 
 	switch valueType {
 	case "array":
-		return fmt.Sprintf("%s: # %s \n%s - ", indent+key, description, indent)
+		return fmt.Sprintf("%s: # %s \n%s- ", indent+key, description, indent)
 
 	case "object":
-		return fmt.Sprintf("%s: # %s \n", indent+key, description)
+		return fmt.Sprintf("%s: # %s\n", indent+key, description)
 	}
-	return fmt.Sprintf("%s: %s # %s \n", indent+key, valueType, description)
+	return fmt.Sprintf("%s: %s # %s\n", indent+key, valueType, description)
 }
