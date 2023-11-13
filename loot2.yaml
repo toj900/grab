@@ -1,0 +1,29 @@
+apiVersion: source.toolkit.fluxcd.io/v1beta2
+kind: OCIRepository
+metadata:
+  name: name
+  namespace: namespace
+spec: 
+  # secretRef: # SecretRef contains the secret name containing the registry login credentials to resolve image metadata. The secret must be of type kubernetes.io/dockerconfigjson. 
+    # name: string # Name of the referent. 
+  url: string # URL is a reference to an OCI artifact repository hosted on a remote container registry. 
+  # verify: # Verify contains the secret name containing the trusted public keys used to verify the signature and specifies which provider to use to check whether OCI image is authentic. 
+    # provider: string # Provider specifies the technology used to sign the OCI Artifact. 
+    # secretRef: # SecretRef specifies the Kubernetes Secret containing the trusted public keys. 
+      # name: string # Name of the referent. 
+  # certSecretRef: # CertSecretRef can be given the name of a Secret containing either or both of  - a PEM-encoded client certificate (`tls.crt`) and private key (`tls.key`); - a PEM-encoded CA certificate (`ca.crt`)  and whichever are supplied, will be used for connecting to the registry. The client cert and key are useful if you are authenticating with a certificate; the CA cert is useful if you are using a self-signed server certificate. The Secret must be of type `Opaque` or `kubernetes.io/tls`.  Note: Support for the `caFile`, `certFile` and `keyFile` keys have been deprecated. 
+    # name: string # Name of the referent. 
+  # insecure: boolean # Insecure allows connecting to a non-TLS HTTP container registry. 
+  interval: string # Interval at which the OCIRepository URL is checked for updates. This interval is approximate and may be subject to jitter to ensure efficient use of resources. 
+  # provider: string # The provider used for authentication, can be 'aws', 'azure', 'gcp' or 'generic'. When not specified, defaults to 'generic'. 
+  # ref: # The OCI reference to pull and monitor for changes, defaults to the latest tag. 
+    # digest: string # Digest is the image digest to pull, takes precedence over SemVer. The value should be in the format 'sha256:<HASH>'. 
+    # semver: string # SemVer is the range of tags to pull selecting the latest within the range, takes precedence over Tag. 
+    # tag: string # Tag is the image tag to pull, defaults to latest. 
+  # ignore: string # Ignore overrides the set of excluded patterns in the .sourceignore format (which is the same as .gitignore). If not provided, a default will be used, consult the documentation for your version to find out what those are. 
+  # layerSelector: # LayerSelector specifies which layer should be extracted from the OCI artifact. When not specified, the first layer found in the artifact is selected. 
+    # mediaType: string # MediaType specifies the OCI media type of the layer which should be extracted from the OCI Artifact. The first layer matching this type is selected. 
+    # operation: string # Operation specifies how the selected layer should be processed. By default, the layer compressed content is extracted to storage. When the operation is set to 'copy', the layer compressed content is persisted to storage as it is. 
+  # serviceAccountName: string # ServiceAccountName is the name of the Kubernetes ServiceAccount used to authenticate the image pull if the service account has attached pull secrets. For more information: https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#add-imagepullsecrets-to-a-service-account 
+  # suspend: boolean # This flag tells the controller to suspend the reconciliation of this source. 
+  # timeout: string # The timeout for remote OCI Repository operations like pulling, defaults to 60s. 
