@@ -6,17 +6,10 @@ import (
 	// "k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	// "k8s.io/cli-runtime/pkg/genericiooptions"
 
-	"log"
+	"os"
 
-	"github.com/toj900/grab/pkg/schema"
-	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
-	"k8s.io/apimachinery/pkg/util/yaml"
-	"k8s.io/cli-runtime/pkg/genericclioptions"
-
-	// "k8s.io/cli-runtime/pkg/genericiooptions"
-	"k8s.io/cli-runtime/pkg/resource"
-	cmdutil "k8s.io/kubectl/pkg/cmd/util"
-	"k8s.io/kubectl/pkg/util"
+	"github.com/toj900/grab/cmd"
+	"k8s.io/klog/v2"
 )
 
 // type GrabFlags struct {
@@ -36,57 +29,63 @@ import (
 // 	}
 // }
 
-func defaultConfigFlags() *genericclioptions.ConfigFlags {
-	return genericclioptions.NewConfigFlags(true).WithDeprecatedPasswordFlag().WithDiscoveryBurst(300).WithDiscoveryQPS(50.0)
-}
+// func defaultConfigFlags() *genericclioptions.ConfigFlags {
+// 	return genericclioptions.NewConfigFlags(true).WithDeprecatedPasswordFlag().WithDiscoveryBurst(300).WithDiscoveryQPS(50.0)
+// }
 
 func main() {
-	// ioStreams := genericiooptions.IOStreams{In: os.Stdin, Out: os.Stdout, ErrOut: os.Stderr}
-
-	loot := genericclioptions.NewConfigFlags(true)
-	lootFlags := cmdutil.NewMatchVersionFlags(loot)
-	cmdutil.NewFactory(lootFlags)
-
-	kubeConfigFlags := defaultConfigFlags()
-	matchVersionKubeConfigFlags := cmdutil.NewMatchVersionFlags(kubeConfigFlags)
-
-	f := cmdutil.NewFactory(matchVersionKubeConfigFlags)
-	// o := NewGrabFlags(f, ioStreams)
-	bro := resource.FilenameOptions{}
-	bro.Filenames = []string{}
-
-	cmdNamespace, _, err := f.ToRawKubeConfigLoader().Namespace()
-	// cmdNamespace, enforceNamespace, err := f.ToRawKubeConfigLoader().Namespace()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	b := f.NewBuilder().Unstructured()
-
-	r := b.NamespaceParam(cmdNamespace).DefaultNamespace().
-		ResourceTypeOrNameArgs(true, "crd").
-		// ResourceTypeOrNameArgs(true, "crd", "buckets.source.toolkit.fluxcd.io").
-		Subresource("").
-		ContinueOnError().
-		Flatten().
-		Do()
-	err = r.Err()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	infos, err := r.Infos()
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	test := &v1beta1.CustomResourceDefinition{}
-	for i := range infos {
-		data, err := util.GetOriginalConfiguration(infos[i].Object)
-		if err != nil {
-			log.Fatal(err)
-		}
-		yaml.Unmarshal(data, test)
-		schema.ParseCRD(test)
+	if err := cmd.Execute(); err != nil {
+		klog.Error(err)
+		os.Exit(1)
 	}
 }
+
+// func main() {
+// 	// ioStreams := genericiooptions.IOStreams{In: os.Stdin, Out: os.Stdout, ErrOut: os.Stderr}
+// 	var builderArgs []string
+// 	builderArgs = append(builderArgs, "gitrepositories.source.toolkit.fluxcd.io")
+// 	builderArgs = append(builderArgs, "buckets.source.toolkit.fluxcd.io")
+
+// 	defaultType := "crd"
+// 	kubeConfigFlags := defaultConfigFlags()
+
+// 	b := resource.NewBuilder(kubeConfigFlags).Unstructured()
+
+// 	r := b.ResourceNames(defaultType, builderArgs...).
+// 		ContinueOnError().
+// 		Flatten().
+// 		Do()
+
+// 	err := r.Err()
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+
+// 	infos, err := r.Infos()
+// 	if err != nil {
+// 		log.Fatal(err)
+// 	}
+// 	test := &v1beta1.CustomResourceDefinition{}
+// 	for i := range infos {
+// 		data, err := getObject(infos[i].Object)
+// 		if err != nil {
+// 			log.Fatal(err)
+// 		}
+// 		yaml.Unmarshal(data, test)
+// 		schema.ParseCRD(test)
+// 	}
+// }
+
+// func getObject(obj runtime.Object) ([]byte, error) {
+// 	var metadataAccessor = meta.NewAccessor()
+// 	annots, err := metadataAccessor.Annotations(obj)
+// 	if err != nil {
+// 		return nil, err
+// 	}
+
+// 	original, ok := annots[v1.LastAppliedConfigAnnotation]
+// 	if !ok {
+// 		return nil, nil
+// 	}
+// 	return []byte(original), nil
+// }
