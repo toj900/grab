@@ -19,6 +19,7 @@ kubectl apply -f ./example/all-source-controller.crds.yaml
 
 ```bash
 go run main.go
+go run main.go --resource buckets.source.toolkit.fluxcd.io -r gitrepositories.source.toolkit.fluxcd.io
 ```
 
 3. Clean up
