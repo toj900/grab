@@ -4,44 +4,114 @@ import (
 	"bytes"
 	"fmt"
 	"log"
+	"os"
+	"path/filepath"
 	"runtime"
 	"strings"
 
-	// "gopkg.in/yaml.v2"
+	"github.com/spf13/cobra"
 	v1 "k8s.io/api/core/v1"
 	"k8s.io/apiextensions-apiserver/pkg/apis/apiextensions/v1beta1"
 	"k8s.io/apimachinery/pkg/api/meta"
 	k8sruntime "k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/yaml"
 	"k8s.io/cli-runtime/pkg/genericclioptions"
+	"k8s.io/cli-runtime/pkg/genericiooptions"
 	"k8s.io/cli-runtime/pkg/resource"
 )
 
-type customSchema struct {
-	key          string
-	value        string
-	valueType    string
-	description  string
-	indent       int
-	required     bool
-	childElement bool
+var (
+	grabSchemaLongDescription = `
+Create example CustomResources from CRDs
+  $%[1] grabschema
+`
+	grabSchemaExample = `
+Create example CustomResources from CRDs
+  $%[1]s grabschema
+`
+)
+
+// TODO
+type SchemaOptions struct {
+	configFlags *genericclioptions.ConfigFlags
+	defaultType string
+
+	args []string
+	genericiooptions.IOStreams
 }
 
-func defaultConfigFlags() *genericclioptions.ConfigFlags {
-	return genericclioptions.NewConfigFlags(true).WithDeprecatedPasswordFlag().WithDiscoveryBurst(300).WithDiscoveryQPS(50.0)
+// NewSchemaOptions provides an instance of SchemaOptions with default values
+func NewSchemaOptions(streams genericiooptions.IOStreams) *SchemaOptions {
+	return &SchemaOptions{
+		configFlags: genericclioptions.NewConfigFlags(true),
+		defaultType: "crd",
+
+		IOStreams: streams,
+	}
 }
 
-func GrabCRD(builderArgs []string) {
-	// var builderArgs []string
-	// builderArgs = append(builderArgs, "gitrepositories.source.toolkit.fluxcd.io")
-	// builderArgs = append(builderArgs, "buckets.source.toolkit.fluxcd.io")
+// NewCmdNamespace provides a cobra command wrapping NamespaceOptions
+func NewCmdSchema(streams genericiooptions.IOStreams) *cobra.Command {
+	o := NewSchemaOptions(streams)
+	if strings.HasPrefix(filepath.Base(os.Args[0]), "kubectl-") {
+		grabSchemaExample = fmt.Sprintf(grabSchemaExample, "kubectl")
+	} else {
+		grabSchemaExample = fmt.Sprintf(grabSchemaExample, "")
+	}
+	cmd := &cobra.Command{
+		Use:     "grabschema [crd-name] [flags]",
+		Short:   "Create example CustomResources from CRDs",
+		Example: grabSchemaExample,
+		// ValidArgsFunction: o.ResourceNames(),
+		SilenceUsage: true,
+		CompletionOptions: cobra.CompletionOptions{
+			DisableDefaultCmd: true,
+		},
+		RunE: func(c *cobra.Command, args []string) error {
+			if err := o.Complete(c, args); err != nil {
+				return err
+			}
+			if err := o.Validate(); err != nil {
+				return err
+			}
+			if err := o.Run(); err != nil {
+				return err
+			}
 
-	defaultType := "crd"
-	kubeConfigFlags := defaultConfigFlags()
+			return nil
+		},
+	}
+	return cmd
+}
 
-	b := resource.NewBuilder(kubeConfigFlags).Unstructured()
+// func (o *SchemaOptions) ResourceNames() func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+// 	return func(cmd *cobra.Command, args []string, toComplete string) ([]string, cobra.ShellCompDirective) {
+// 		var comps []string
+// 		comps = append(comps, "loot")
+// 		directive := cobra.ShellCompDirectiveNoFileComp
+// 		return comps, directive
+// 	}
+// }
 
-	r := b.ResourceNames(defaultType, builderArgs...).
+// Complete sets all information required for generating example custom resources
+func (o *SchemaOptions) Complete(cmd *cobra.Command, args []string) error {
+	o.args = args
+
+	return nil
+}
+
+// Validate ensures that all required arguments and flag values are provided
+func (o *SchemaOptions) Validate() error {
+	if len(o.args) < 1 {
+		return fmt.Errorf("either one or more arguments are allowed")
+	}
+
+	return nil
+}
+
+func (o *SchemaOptions) Run() error {
+	b := resource.NewBuilder(o.configFlags).Unstructured()
+	r := b.ResourceNames(o.defaultType, o.args...).
 		ContinueOnError().
 		Flatten().
 		Do()
@@ -55,6 +125,7 @@ func GrabCRD(builderArgs []string) {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	test := &v1beta1.CustomResourceDefinition{}
 	for i := range infos {
 		data, err := getObject(infos[i].Object)
@@ -62,11 +133,22 @@ func GrabCRD(builderArgs []string) {
 			log.Fatal(err)
 		}
 		yaml.Unmarshal(data, test)
-		ParseCRD(test)
+		parseCRD(test)
 	}
+	return nil
 }
 
-func ParseCRD(crd *v1beta1.CustomResourceDefinition) {
+type customSchema struct {
+	key          string
+	value        string
+	valueType    string
+	description  string
+	indent       int
+	required     bool
+	childElement bool
+}
+
+func parseCRD(crd *v1beta1.CustomResourceDefinition) {
 	group := crd.Spec.Group
 	name := crd.Spec.Names.Kind
 	for _, version := range crd.Spec.Versions {
